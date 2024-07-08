@@ -1,0 +1,78 @@
+package com.guru.Task_Management_App.controller;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import com.guru.Task_Management_App.service.UserService;
+import com.guru.Task_Management_App.user.User;
+
+import jakarta.servlet.http.HttpSession;
+
+@RestController
+@RequestMapping("/api/auth")
+public class AuthController {
+
+    @Autowired
+    private UserService userService;
+
+    @PostMapping("/register")
+    public String register(@RequestBody User user) {
+        if (userService.findByUsername(user.getUsername()) != null) {
+            return "Username is already taken";
+        }
+        userService.save(user);
+        return "User registered successfully";
+    }
+
+    @PostMapping("/login")
+    public String login(@RequestBody AuthRequest authRequest, HttpSession session) {
+        if (userService.authenticate(authRequest.getUsername(), authRequest.getPassword())) {
+            session.setAttribute("username", authRequest.getUsername());
+            return "Login successful";
+        } else {
+            return "Invalid username or password";
+        }
+    }
+
+    @PostMapping("/logout")
+    public String logout(HttpSession session) {
+        session.invalidate();
+        return "Logout successful";
+    }
+
+    @GetMapping("/session")
+    public SessionStatus checkSession(HttpSession session) {
+        String username = (String) session.getAttribute("username");
+        return new SessionStatus(username != null, username);
+    }
+
+    static class SessionStatus {
+        private boolean isAuthenticated;
+        private String username;
+
+        public SessionStatus(boolean isAuthenticated, String username) {
+            this.isAuthenticated = isAuthenticated;
+            this.username = username;
+        }
+
+        // Getters and setters
+    }
+
+    static class AuthRequest {
+        private String username;
+        private String password;
+		public String getUsername() {
+			return username;
+		}
+		public void setUsername(String username) {
+			this.username = username;
+		}
+		public String getPassword() {
+			return password;
+		}
+		public void setPassword(String password) {
+			this.password = password;
+		}
+
+        
+    }
+}
